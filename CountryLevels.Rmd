@@ -1,0 +1,162 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+df <-read.csv('Waterfall2.csv', stringsAsFactors = FALSE)
+
+library(dplyr)
+df_country <- summarize(group_by(df, CountryClass), HDI2012 = gm_mean(as.numeric(HDI2012)),
+                        Education2012 = gm_mean(as.numeric(Education2012)),
+                        Life2012 =  gm_mean(as.numeric(Life2012)),
+                        Income2012 = gm_mean(as.numeric(Income2012)),
+                        Education2017 = gm_mean(as.numeric(Education2017)),
+                        Life2017 =  gm_mean(as.numeric(Life2017)),
+                        Income2017 = gm_mean(as.numeric(Income2017)),
+                        HDI2017 = gm_mean(as.numeric(HDI2017))
+                        )
+
+df_country$per_HDI<- 1+((df_country$HDI2017-df_country$HDI2012)/df_country$HDI2012)
+df_country$per_Edu<- 1+((df_country$Education2017-df_country$Education2012)/df_country$Education2012)
+df_country$per_Life<- 1+((df_country$Life2017-df_country$Life2012)/df_country$Life2012)
+df_country$per_Income<- 1+((df_country$Income2017-df_country$Income2012)/df_country$Income2012)
+
+df_country$per_Edu_log<-log(df_country$per_Edu)/3
+df_country$per_Life_log<-log(df_country$per_Life)/3
+df_country$per_Income_log<-log(df_country$per_Income)/3
+
+```
+
+```{r}
+
+library(reshape2)
+df_low <- as.data.frame(df_country[df_country$CountryClass=="Low",][c('HDI2012','per_Edu_log', 'per_Life_log', 'per_Income_log','HDI2017')], stringAsFactors= FALSE)
+
+df_low<-as.data.frame(melt(df_low), stringAsFactor=FALSE)
+
+df_low$variable <- as.character(df_low$variable)
+df_low$variable[2]<-c("Education")
+df_low$variable[3]<-c("LifeExpectancy")
+df_low$variable[4]<-c("IncomeLevel")
+
+colnames(df_low)<-c("Values","LowHDIcountries")
+
+df_high <- as.data.frame(df_country[df_country$CountryClass=="High",][c('HDI2012','per_Edu_log', 'per_Life_log', 'per_Income_log','HDI2017')], stringAsFactors= FALSE)
+
+df_high<-as.data.frame(melt(df_high), stringAsFactor=FALSE)
+
+df_high$variable <- as.character(df_high$variable)
+df_high$variable[2]<-c("Education")
+df_high$variable[3]<-c("LifeExpectancy")
+df_high$variable[4]<-c("IncomeLevel")
+
+colnames(df_high)<-c("Values","HighHDIcountries")
+
+df_medium <- as.data.frame(df_country[df_country$CountryClass=="Medium",][c('HDI2012','per_Edu_log', 'per_Life_log', 'per_Income_log','HDI2017')], stringAsFactors= FALSE)
+
+df_medium<-as.data.frame(melt(df_medium), stringAsFactor=FALSE)
+
+df_medium$variable <- as.character(df_medium$variable)
+df_medium$variable[2]<-c("Education")
+df_medium$variable[3]<-c("LifeExpectancy")
+df_medium$variable[4]<-c("IncomeLevel")
+
+colnames(df_medium)<-c("Values","MediumHDIcountries")
+
+```
+
+```{r}
+
+# df_low$end[df_low$LowHDIcountries<0.4]<-df_low$end[df_low$LowHDIcountries<0.4]+0.1
+# df_low$start<- c(0,head(df_low$end,-1))
+# 
+# 
+# df_low$end[df_low$LowHDIcountries<0.4][2:3]<-df_low$end[df_low$LowHDIcountries<0.4][2:3]+0.1
+# df_low$start<- c(0,head(df_low$end,-1))
+# 
+# 
+# df_low$end[df_low$LowHDIcountries<0.4][3]<-df_low$end[df_low$LowHDIcountries<0.4][3]+0.1
+# df_low$start<- c(0,head(df_low$end,-1))
+
+```
+
+```{r}
+df_low$Values<-factor(df_low$Values, levels = df_low$Values)
+df_low$id<-seq_along(df_low$LowHDIcountries)
+df_low$type<-ifelse(df_low$LowHDIcountries>0,"increment","decrement")
+df_low[df_low$Values %in% c("HDI2012","HDI2017"), "type"] <-"HDIs"
+df_low$end<-cumsum(df_low$LowHDIcountries)
+
+df_low$end <- c(head(df_low$end,-1), 0)
+df_low$start<- c(0,head(df_low$end,-1))
+df_low$type<-as.factor(df_low$type)
+
+df_low$start[1]<-0.4
+df_low$end[5]<-0.4
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(df_low, aes(x=Values, fill =  type,  label = LowHDIcountries)) + geom_rect(aes(x=Values, xmin = id-0.45, xmax= id+0.45, ymin = end, ymax = start)) +ylim(0.4,0.55)+theme(axis.title.x=element_blank(), plot.background = element_blank(), legend.position="bottom", plot.title = element_text(hjust = 0.5, size =30),axis.text = element_text(size=14, hjust=0.4), panel.background = element_rect("white"), panel.grid.major = element_line("lightgrey", size=0.1))+ggtitle("Low HDI Countries")+labs(fill = "")
+
+```
+```{r}
+df_medium$Values<-factor(df_medium$Values, levels = df_medium$Values)
+df_medium$id<-seq_along(df_medium$MediumHDIcountries)
+df_medium$type<-ifelse(df_medium$MediumHDIcountries>0,"increment","decrement")
+df_medium[df_medium$Values %in% c("HDI2012","HDI2017"), "type"] <-"HDIs"
+df_medium$end<-cumsum(df_medium$MediumHDIcountries)
+
+df_medium$end <- c(head(df_medium$end,-1), 0)
+df_medium$start<- c(0,head(df_medium$end,-1))
+df_medium$type<-as.factor(df_medium$type)
+
+df_medium$start[1]<-0.7
+df_medium$end[5]<-0.7
+```
+
+```{r}
+library(ggplot2)
+
+
+
+ggplot(df_medium, aes(Values, fill =  type)) + geom_rect(aes(x=Values, xmin = id-0.45, xmax= id+0.45, ymin = end, ymax = start, label = MediumHDIcountries)) +ylim(0.7,0.78)+theme(axis.title.x=element_blank(), plot.background = element_blank(), legend.position="bottom", plot.title = element_text(hjust = 0.5, size =30),axis.text = element_text(size=14, hjust=0.4), panel.background = element_rect("white"), panel.grid.major = element_line("lightgrey", size=0.1))+ggtitle("Medium HDI Countries")+labs(fill = "")
+
+```
+
+```{r}
+df_high$Values<-factor(df_high$Values, levels = df_high$Values)
+df_high$id<-seq_along(df_high$HighHDIcountries)
+df_high$type<-ifelse(df_high$HighHDIcountries>0,"increment","decrement")
+df_high[df_high$Values %in% c("HDI2012","HDI2017"), "type"] <-"HDIs"
+df_high$end<-cumsum(df_high$HighHDIcountries)
+
+df_high$end <- c(head(df_high$end,-1), 0)
+df_high$start<- c(0,head(df_high$end,-1))
+df_high$type<-as.factor(df_high$type)
+
+df_high$start[1]<-0.85
+df_high$end[5]<-0.85
+```
+
+```{r}
+library(ggplot2)
+
+
+
+ggplot(df_high, aes(Values, fill =  type)) + geom_rect(aes(x=Values, xmin = id-0.45, xmax= id+0.45, ymin = end, ymax = start, label = HighHDIcountries)) +ylim(0.85,0.91)+theme(axis.title.x=element_blank(), plot.background = element_blank(), legend.position="bottom", plot.title = element_text(hjust = 0.5, size =30),axis.text = element_text(size=14, hjust=0.4), panel.background = element_rect("white"), panel.grid.major = element_line("lightgrey", size=0.1))+ggtitle("High HDI Countries")+labs(fill = "")
+
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

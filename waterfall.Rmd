@@ -1,0 +1,58 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+#library()
+df <-read.csv('Waterfall1.csv', stringsAsFactors = FALSE)
+
+afg<- df[1:2]
+
+
+afg2<-afg[c(1:4,6),]
+afg2$ï..Values[1]<-"2012"
+afg2$ï..Values[5]<-"2017"
+afg2$ï..Values<-factor(afg2$ï..Values, levels = afg2$ï..Values)
+afg2$id<-seq_along(afg2$Afghanistan)
+afg2$type<-ifelse(afg2$Afghanistan>0,"in","out")
+afg2[afg2$ï..Values %in% c("2012","2017"), "type"] <-"net"
+afg2$end<-cumsum(afg2$Afghanistan)
+
+afg2$end <- c(head(afg2$end,-1), 0)
+afg2$start<- c(0,head(afg2$end,-1))
+afg2$type<-as.factor(afg2$type)
+
+afg2$end[afg2$Afghanistan<0.4]<-afg2$end[afg2$Afghanistan<0.4]+0.1
+afg2$start<- c(0,head(afg2$end,-1))
+
+
+afg2$end[afg2$Afghanistan<0.4][2:3]<-afg2$end[afg2$Afghanistan<0.4][2:3]+0.1
+afg2$start<- c(0,head(afg2$end,-1))
+
+
+afg2$end[afg2$Afghanistan<0.4][3]<-afg2$end[afg2$Afghanistan<0.4][3]-0.1
+afg2$start<- c(0,head(afg2$end,-1))
+
+
+
+```
+
+```{r}
+library(ggplot2)
+
+
+
+ggplot(afg2, aes(ï..Values, fill =  type)) + geom_rect(aes(x=ï..Values, xmin = id-0.45, xmax= id+0.45, ymin = end, ymax = start)) +scale_y_continuous(expand = c(0,0.3))+theme(axis.title.x=element_blank())
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
