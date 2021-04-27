@@ -5,5 +5,12 @@ Human Development Index (HDI) is a geometric mean of its 3 component indices - L
 
 Here we try to view the changes in respective components leading to overall change in HDI.
 
-### LOW INCOME COUNTRIES -
+### LOW HDI COUNTRIES -
 
+![](LowHDI.png)
+
+### MEDIUM HDI COUNTRIES -
+![](MedHDI.png)
+
+### HIGH HDI COUNTRIES -
+![](HighHDI.png)
